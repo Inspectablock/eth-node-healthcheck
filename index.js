@@ -7,6 +7,10 @@ const host = process.env.RPC_HOST || 'localhost';
 const provider = ethers.getDefaultProvider(process.env.NETWORK);
 const localProvider = new ethers.providers.JsonRpcProvider(`http://${host}:8545`);
 const MAX_BLOCK_DIFFERENCE = 3;
+let runComparison = true;
+if (process.env.TRIGGER_TIME && process.env.TRIGGER_TIME > Math.floor(Date.now() / 1000)) {
+  runComparison = false;
+}
 
 const onHealthcheckRequest = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -24,7 +28,7 @@ const onHealthcheckRequest = async (req, res) => {
     res.end(e);
   }
 
-  let responseStatus = networkBlockNum - localBlockNum > MAX_BLOCK_DIFFERENCE ? 500 : 200;
+  let responseStatus = runComparison && (networkBlockNum - localBlockNum) > MAX_BLOCK_DIFFERENCE ? 500 : 200;
   if (localBlockNum > 10000 && networkBlockNum <= 0) { // don't let etherscan f**k us
     responseStatus = 200;
   }
